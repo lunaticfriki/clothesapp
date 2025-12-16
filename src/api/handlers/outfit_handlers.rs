@@ -6,16 +6,17 @@ use axum::{
 };
 use serde_json::json;
 
-use crate::{application::OutfitService, domain::entities::Outfit};
+use crate::{application::{OutfitReadService, OutfitWriteService}, domain::entities::Outfit};
 
 #[derive(Clone)]
 pub struct OutfitHandlers {
-    service: OutfitService,
+    read_service: OutfitReadService,
+    write_service: OutfitWriteService,
 }
 
 impl OutfitHandlers {
-    pub fn new(service: OutfitService) -> Self {
-        Self { service }
+    pub fn new(read_service: OutfitReadService, write_service: OutfitWriteService) -> Self {
+        Self { read_service, write_service }
     }
 }
 
@@ -23,7 +24,7 @@ pub async fn create_outfit(
     State(handlers): State<OutfitHandlers>,
     Json(outfit): Json<Outfit>,
 ) -> impl IntoResponse {
-    match handlers.service.create_outfit(outfit) {
+    match handlers.write_service.create_outfit(outfit) {
         Ok(created) => (StatusCode::CREATED, Json(created)).into_response(),
         Err(e) => (
             StatusCode::BAD_REQUEST,
@@ -37,7 +38,7 @@ pub async fn get_outfit_by_id(
     State(handlers): State<OutfitHandlers>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match handlers.service.get_outfit_by_id(&id) {
+    match handlers.read_service.get_outfit_by_id(&id) {
         Ok(Some(outfit)) => (StatusCode::OK, Json(outfit)).into_response(),
         Ok(None) => (
             StatusCode::NOT_FOUND,
@@ -53,7 +54,7 @@ pub async fn get_outfit_by_id(
 }
 
 pub async fn get_all_outfits(State(handlers): State<OutfitHandlers>) -> impl IntoResponse {
-    match handlers.service.get_all_outfits() {
+    match handlers.read_service.get_all_outfits() {
         Ok(outfits) => (StatusCode::OK, Json(outfits)).into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -68,7 +69,7 @@ pub async fn update_outfit(
     Path(id): Path<String>,
     Json(outfit): Json<Outfit>,
 ) -> impl IntoResponse {
-    match handlers.service.update_outfit(&id, outfit) {
+    match handlers.write_service.update_outfit(&id, outfit) {
         Ok(updated) => (StatusCode::OK, Json(updated)).into_response(),
         Err(e) => (
             StatusCode::BAD_REQUEST,
@@ -82,7 +83,7 @@ pub async fn delete_outfit(
     State(handlers): State<OutfitHandlers>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match handlers.service.delete_outfit(&id) {
+    match handlers.write_service.delete_outfit(&id) {
         Ok(_) => StatusCode::NO_CONTENT.into_response(),
         Err(e) => (
             StatusCode::BAD_REQUEST,

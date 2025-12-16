@@ -6,7 +6,11 @@ mod infrastructure;
 use std::sync::Arc;
 
 use api::handlers::{OutfitHandlers, PantsHandlers, ShirtHandlers};
-use application::{OutfitService, PantsService, ShirtService};
+use application::{
+    OutfitReadService, OutfitWriteService, 
+    PantsReadService, PantsWriteService, 
+    ShirtReadService, ShirtWriteService
+};
 use infrastructure::{seed_data, InMemoryOutfitRepository, InMemoryPantsRepository, InMemoryShirtRepository};
 
 #[tokio::main]
@@ -28,14 +32,17 @@ async fn main() {
     tracing::info!("Database seeded successfully");
 
   
-    let pants_service = PantsService::new(pants_repo);
-    let shirt_service = ShirtService::new(shirt_repo);
-    let outfit_service = OutfitService::new(outfit_repo);
+    let pants_read_service = PantsReadService::new(pants_repo.clone());
+    let pants_write_service = PantsWriteService::new(pants_repo);
+    let shirt_read_service = ShirtReadService::new(shirt_repo.clone());
+    let shirt_write_service = ShirtWriteService::new(shirt_repo);
+    let outfit_read_service = OutfitReadService::new(outfit_repo.clone());
+    let outfit_write_service = OutfitWriteService::new(outfit_repo);
 
   
-    let pants_handlers = PantsHandlers::new(pants_service);
-    let shirt_handlers = ShirtHandlers::new(shirt_service);
-    let outfit_handlers = OutfitHandlers::new(outfit_service);
+    let pants_handlers = PantsHandlers::new(pants_read_service, pants_write_service);
+    let shirt_handlers = ShirtHandlers::new(shirt_read_service, shirt_write_service);
+    let outfit_handlers = OutfitHandlers::new(outfit_read_service, outfit_write_service);
 
   
     let app = api::create_router(pants_handlers, shirt_handlers, outfit_handlers);

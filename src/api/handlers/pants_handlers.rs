@@ -6,16 +6,17 @@ use axum::{
 };
 use serde_json::json;
 
-use crate::{application::PantsService, domain::entities::Pants};
+use crate::{application::{PantsReadService, PantsWriteService}, domain::entities::Pants};
 
 #[derive(Clone)]
 pub struct PantsHandlers {
-    service: PantsService,
+    read_service: PantsReadService,
+    write_service: PantsWriteService,
 }
 
 impl PantsHandlers {
-    pub fn new(service: PantsService) -> Self {
-        Self { service }
+    pub fn new(read_service: PantsReadService, write_service: PantsWriteService) -> Self {
+        Self { read_service, write_service }
     }
 }
 
@@ -23,7 +24,7 @@ pub async fn create_pants(
     State(handlers): State<PantsHandlers>,
     Json(pants): Json<Pants>,
 ) -> impl IntoResponse {
-    match handlers.service.create_pants(pants) {
+    match handlers.write_service.create_pants(pants) {
         Ok(created) => (StatusCode::CREATED, Json(created)).into_response(),
         Err(e) => (
             StatusCode::BAD_REQUEST,
@@ -37,7 +38,7 @@ pub async fn get_pants_by_id(
     State(handlers): State<PantsHandlers>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match handlers.service.get_pants_by_id(&id) {
+    match handlers.read_service.get_pants_by_id(&id) {
         Ok(Some(pants)) => (StatusCode::OK, Json(pants)).into_response(),
         Ok(None) => (
             StatusCode::NOT_FOUND,
@@ -53,7 +54,7 @@ pub async fn get_pants_by_id(
 }
 
 pub async fn get_all_pants(State(handlers): State<PantsHandlers>) -> impl IntoResponse {
-    match handlers.service.get_all_pants() {
+    match handlers.read_service.get_all_pants() {
         Ok(pants) => (StatusCode::OK, Json(pants)).into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -68,7 +69,7 @@ pub async fn update_pants(
     Path(id): Path<String>,
     Json(pants): Json<Pants>,
 ) -> impl IntoResponse {
-    match handlers.service.update_pants(&id, pants) {
+    match handlers.write_service.update_pants(&id, pants) {
         Ok(updated) => (StatusCode::OK, Json(updated)).into_response(),
         Err(e) => (
             StatusCode::BAD_REQUEST,
@@ -82,7 +83,7 @@ pub async fn delete_pants(
     State(handlers): State<PantsHandlers>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match handlers.service.delete_pants(&id) {
+    match handlers.write_service.delete_pants(&id) {
         Ok(_) => StatusCode::NO_CONTENT.into_response(),
         Err(e) => (
             StatusCode::BAD_REQUEST,
