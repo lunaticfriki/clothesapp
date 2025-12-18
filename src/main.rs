@@ -1,17 +1,14 @@
-mod api;
 mod application;
 mod domain;
 mod infrastructure;
+mod di;
 
 use std::sync::Arc;
 
-use api::handlers::{OutfitHandlers, PantsHandlers, ShirtHandlers};
-use application::{
-    OutfitReadService, OutfitWriteService, 
-    PantsReadService, PantsWriteService, 
-    ShirtReadService, ShirtWriteService
-};
-use infrastructure::{seed_data, InMemoryOutfitRepository, InMemoryPantsRepository, InMemoryShirtRepository};
+use infrastructure::http::handlers::{OutfitHandlers, PantsHandlers, ShirtHandlers};
+use di::AppModule;
+use infrastructure::seed_data;
+use shaku::HasComponent;
 
 #[tokio::main]
 async fn main() {
@@ -20,32 +17,55 @@ async fn main() {
         .compact()
         .init();
 
-    let pants_repo = Arc::new(InMemoryPantsRepository::new());
-    let shirt_repo = Arc::new(InMemoryShirtRepository::new());  
-    let outfit_repo = Arc::new(InMemoryOutfitRepository::new());
+    let module = AppModule::builder().build();
 
- 
-    if let Err(e) = seed_data(pants_repo.as_ref(), shirt_repo.as_ref(), outfit_repo.as_ref()) {
-        eprintln!("Failed to seed data: {}", e);
-        return;
+    {
+        use crate::domain::repositories::{PantsRepository, ShirtRepository, OutfitRepository};
+        
+        let pants_repo: Arc<dyn PantsRepository> = module.resolve();
+        let shirt_repo: Arc<dyn ShirtRepository> = module.resolve();
+        let outfit_repo: Arc<dyn OutfitRepository> = module.resolve();
+        
+        if let Err(e) = seed_data(pants_repo.as_ref(), shirt_repo.as_ref(), outfit_repo.as_ref()) {
+            eprintln!("Failed to seed data: {}", e);
+            return;
+        }
+        tracing::info!("Database seeded successfully");
     }
-    tracing::info!("Database seeded successfully");
 
-  
-    let pants_read_service = PantsReadService::new(pants_repo.clone());
-    let pants_write_service = PantsWriteService::new(pants_repo);
-    let shirt_read_service = ShirtReadService::new(shirt_repo.clone());
-    let shirt_write_service = ShirtWriteService::new(shirt_repo);
-    let outfit_read_service = OutfitReadService::new(outfit_repo.clone());
-    let outfit_write_service = OutfitWriteService::new(outfit_repo);
+    use crate::infrastructure::http::handlers::{
+        pants_handlers::PantsHandlersInterface,
+        shirt_handlers::ShirtHandlersInterface,
+        outfit_handlers::OutfitHandlersInterface,
+    };
+    
+    let pants_trait: Arc<dyn PantsHandlersInterface> = module.resolve();
+    let shirt_trait: Arc<dyn ShirtHandlersInterface> = module.resolve();
+    let outfit_trait: Arc<dyn OutfitHandlersInterface> = module.resolve();
+    
+    let pants_handlers: PantsHandlers = unsafe {
+        let ptr = Arc::into_raw(pants_trait);
+        let concrete_ptr = ptr as *const PantsHandlers;
+        (*concrete_ptr).clone()
+    };
+    
+    let shirt_handlers: ShirtHandlers = unsafe {
+        let ptr = Arc::into_raw(shirt_trait);
+        let concrete_ptr = ptr as *const ShirtHandlers;
+        (*concrete_ptr).clone()
+    };
+    
+    let outfit_handlers: OutfitHandlers = unsafe {
+        let ptr = Arc::into_raw(outfit_trait);
+        let concrete_ptr = ptr as *const OutfitHandlers;
+        (*concrete_ptr).clone()
+    };
 
-  
-    let pants_handlers = PantsHandlers::new(pants_read_service, pants_write_service);
-    let shirt_handlers = ShirtHandlers::new(shirt_read_service, shirt_write_service);
-    let outfit_handlers = OutfitHandlers::new(outfit_read_service, outfit_write_service);
-
-  
-    let app = api::create_router(pants_handlers, shirt_handlers, outfit_handlers);
+    let app = infrastructure::create_router(
+        pants_handlers,
+        shirt_handlers,
+        outfit_handlers,
+    );
 
     
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")

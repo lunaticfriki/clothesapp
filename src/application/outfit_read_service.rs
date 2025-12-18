@@ -1,20 +1,24 @@
-use crate::domain::{entities::Outfit, repositories::DynOutfitRepository};
+use crate::domain::{entities::Outfit, repositories::OutfitRepository};
+use std::sync::Arc;
 
-#[derive(Clone)]
-pub struct OutfitReadService {
-    repository: DynOutfitRepository,
+pub trait OutfitReadServiceInterface: shaku::Interface {
+    fn get_outfit_by_id(&self, id: &str) -> Result<Option<Outfit>, String>;
+    fn get_all_outfits(&self) -> Result<Vec<Outfit>, String>;
 }
 
-impl OutfitReadService {
-    pub fn new(repository: DynOutfitRepository) -> Self {
-        Self { repository }
-    }
+#[derive(Clone, shaku::Component)]
+#[shaku(interface = OutfitReadServiceInterface)]
+pub struct OutfitReadService {
+    #[shaku(inject)]
+    repository: Arc<dyn OutfitRepository>,
+}
 
-    pub fn get_outfit_by_id(&self, id: &str) -> Result<Option<Outfit>, String> {
+impl OutfitReadServiceInterface for OutfitReadService {
+    fn get_outfit_by_id(&self, id: &str) -> Result<Option<Outfit>, String> {
         self.repository.get_by_id(id)
     }
 
-    pub fn get_all_outfits(&self) -> Result<Vec<Outfit>, String> {
+    fn get_all_outfits(&self) -> Result<Vec<Outfit>, String> {
         self.repository.get_all()
     }
 }

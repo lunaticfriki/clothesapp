@@ -6,23 +6,29 @@ use axum::{
 };
 use serde_json::json;
 
+use std::sync::Arc;
+
 use crate::{
-    api::dto::PantsDTO,
-    application::{PantsReadService, PantsWriteService}, 
+    infrastructure::http::dto::PantsDTO,
+    application::{
+        pants_read_service::PantsReadServiceInterface,
+        pants_write_service::PantsWriteServiceInterface,
+    },
     domain::entities::Pants
 };
 
-#[derive(Clone)]
+pub trait PantsHandlersInterface: shaku::Interface {}
+
+#[derive(Clone, shaku::Component)]
+#[shaku(interface = PantsHandlersInterface)]
 pub struct PantsHandlers {
-    read_service: PantsReadService,
-    write_service: PantsWriteService,
+    #[shaku(inject)]
+    read_service: Arc<dyn PantsReadServiceInterface>,
+    #[shaku(inject)]
+    write_service: Arc<dyn PantsWriteServiceInterface>,
 }
 
-impl PantsHandlers {
-    pub fn new(read_service: PantsReadService, write_service: PantsWriteService) -> Self {
-        Self { read_service, write_service }
-    }
-}
+impl PantsHandlersInterface for PantsHandlers {}
 
 pub async fn create_pants(
     State(handlers): State<PantsHandlers>,

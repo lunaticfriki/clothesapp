@@ -6,23 +6,29 @@ use axum::{
 };
 use serde_json::json;
 
+use std::sync::Arc;
+
 use crate::{
-    api::dto::ShirtDTO,
-    application::{ShirtReadService, ShirtWriteService}, 
+    infrastructure::http::dto::ShirtDTO,
+    application::{
+        shirt_read_service::ShirtReadServiceInterface,
+        shirt_write_service::ShirtWriteServiceInterface,
+    },
     domain::entities::Shirt
 };
 
-#[derive(Clone)]
+pub trait ShirtHandlersInterface: shaku::Interface {}
+
+#[derive(Clone, shaku::Component)]
+#[shaku(interface = ShirtHandlersInterface)]
 pub struct ShirtHandlers {
-    read_service: ShirtReadService,
-    write_service: ShirtWriteService,
+    #[shaku(inject)]
+    read_service: Arc<dyn ShirtReadServiceInterface>,
+    #[shaku(inject)]
+    write_service: Arc<dyn ShirtWriteServiceInterface>,
 }
 
-impl ShirtHandlers {
-    pub fn new(read_service: ShirtReadService, write_service: ShirtWriteService) -> Self {
-        Self { read_service, write_service }
-    }
-}
+impl ShirtHandlersInterface for ShirtHandlers {}
 
 pub async fn create_shirt(
     State(handlers): State<ShirtHandlers>,

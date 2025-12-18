@@ -2,8 +2,17 @@ use crate::domain::{entities::Shirt, repositories::ShirtRepository};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+#[derive(shaku::Component)]
+#[shaku(interface = ShirtRepository)]
 pub struct InMemoryShirtRepository {
+    #[shaku(default)]
     storage: Arc<RwLock<HashMap<String, Shirt>>>,
+}
+
+impl Default for InMemoryShirtRepository {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl InMemoryShirtRepository {

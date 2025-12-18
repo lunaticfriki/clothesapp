@@ -4,7 +4,7 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 
-use crate::api::handlers::{
+use crate::infrastructure::http::handlers::{
     outfit_handlers::{
         create_outfit, delete_outfit, get_all_outfits, get_outfit_by_id, update_outfit,
         OutfitHandlers,

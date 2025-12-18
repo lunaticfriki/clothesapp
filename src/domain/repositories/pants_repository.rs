@@ -1,7 +1,7 @@
 use crate::domain::entities::Pants;
 use std::sync::Arc;
 
-pub trait PantsRepository: Send + Sync {
+pub trait PantsRepository: shaku::Interface + Send + Sync {
     fn create(&self, pants: Pants) -> Result<Pants, String>;
     fn get_by_id(&self, id: &str) -> Result<Option<Pants>, String>;
     fn get_all(&self) -> Result<Vec<Pants>, String>;
@@ -9,4 +9,3 @@ pub trait PantsRepository: Send + Sync {
     fn delete(&self, id: &str) -> Result<(), String>;
 }
 
-pub type DynPantsRepository = Arc<dyn PantsRepository>;

@@ -2,8 +2,17 @@ use crate::domain::{entities::Pants, repositories::PantsRepository};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+#[derive(shaku::Component)]
+#[shaku(interface = PantsRepository)]
 pub struct InMemoryPantsRepository {
+    #[shaku(default)]
     storage: Arc<RwLock<HashMap<String, Pants>>>,
+}
+
+impl Default for InMemoryPantsRepository {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl InMemoryPantsRepository {

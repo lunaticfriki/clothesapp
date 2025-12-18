@@ -1,20 +1,24 @@
-use crate::domain::{entities::Pants, repositories::DynPantsRepository};
+use crate::domain::{entities::Pants, repositories::PantsRepository};
+use std::sync::Arc;
 
-#[derive(Clone)]
-pub struct PantsReadService {
-    repository: DynPantsRepository,
+pub trait PantsReadServiceInterface: shaku::Interface {
+    fn get_pants_by_id(&self, id: &str) -> Result<Option<Pants>, String>;
+    fn get_all_pants(&self) -> Result<Vec<Pants>, String>;
 }
 
-impl PantsReadService {
-    pub fn new(repository: DynPantsRepository) -> Self {
-        Self { repository }
-    }
+#[derive(Clone, shaku::Component)]
+#[shaku(interface = PantsReadServiceInterface)]
+pub struct PantsReadService {
+    #[shaku(inject)]
+    repository: Arc<dyn PantsRepository>,
+}
 
-    pub fn get_pants_by_id(&self, id: &str) -> Result<Option<Pants>, String> {
+impl PantsReadServiceInterface for PantsReadService {
+    fn get_pants_by_id(&self, id: &str) -> Result<Option<Pants>, String> {
         self.repository.get_by_id(id)
     }
 
-    pub fn get_all_pants(&self) -> Result<Vec<Pants>, String> {
+    fn get_all_pants(&self) -> Result<Vec<Pants>, String> {
         self.repository.get_all()
     }
 }

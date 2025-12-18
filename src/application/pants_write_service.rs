@@ -1,26 +1,31 @@
-use crate::domain::{entities::Pants, repositories::DynPantsRepository};
+use crate::domain::{entities::Pants, repositories::PantsRepository};
+use std::sync::Arc;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct PantsWriteService {
-    repository: DynPantsRepository,
+pub trait PantsWriteServiceInterface: shaku::Interface {
+    fn create_pants(&self, pants: Pants) -> Result<Pants, String>;
+    fn update_pants(&self, id: &str, pants: Pants) -> Result<Pants, String>;
+    fn delete_pants(&self, id: &str) -> Result<(), String>;
 }
 
-impl PantsWriteService {
-    pub fn new(repository: DynPantsRepository) -> Self {
-        Self { repository }
-    }
+#[derive(Clone, shaku::Component)]
+#[shaku(interface = PantsWriteServiceInterface)]
+pub struct PantsWriteService {
+    #[shaku(inject)]
+    repository: Arc<dyn PantsRepository>,
+}
 
-    pub fn create_pants(&self, mut pants: Pants) -> Result<Pants, String> {
+impl PantsWriteServiceInterface for PantsWriteService {
+    fn create_pants(&self, mut pants: Pants) -> Result<Pants, String> {
         pants.id = Uuid::new_v4().to_string();
         self.repository.create(pants)
     }
 
-    pub fn update_pants(&self, id: &str, pants: Pants) -> Result<Pants, String> {
+    fn update_pants(&self, id: &str, pants: Pants) -> Result<Pants, String> {
         self.repository.update(id, pants)
     }
 
-    pub fn delete_pants(&self, id: &str) -> Result<(), String> {
+    fn delete_pants(&self, id: &str) -> Result<(), String> {
         self.repository.delete(id)
     }
 }

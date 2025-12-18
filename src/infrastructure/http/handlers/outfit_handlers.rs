@@ -6,23 +6,29 @@ use axum::{
 };
 use serde_json::json;
 
+use std::sync::Arc;
+
 use crate::{
-    api::dto::OutfitDTO,
-    application::{OutfitReadService, OutfitWriteService}, 
+    infrastructure::http::dto::OutfitDTO,
+    application::{
+        outfit_read_service::OutfitReadServiceInterface,
+        outfit_write_service::OutfitWriteServiceInterface,
+    },
     domain::entities::Outfit
 };
 
-#[derive(Clone)]
+pub trait OutfitHandlersInterface: shaku::Interface {}
+
+#[derive(Clone, shaku::Component)]
+#[shaku(interface = OutfitHandlersInterface)]
 pub struct OutfitHandlers {
-    read_service: OutfitReadService,
-    write_service: OutfitWriteService,
+    #[shaku(inject)]
+    read_service: Arc<dyn OutfitReadServiceInterface>,
+    #[shaku(inject)]
+    write_service: Arc<dyn OutfitWriteServiceInterface>,
 }
 
-impl OutfitHandlers {
-    pub fn new(read_service: OutfitReadService, write_service: OutfitWriteService) -> Self {
-        Self { read_service, write_service }
-    }
-}
+impl OutfitHandlersInterface for OutfitHandlers {}
 
 pub async fn create_outfit(
     State(handlers): State<OutfitHandlers>,

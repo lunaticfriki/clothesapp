@@ -1,34 +1,38 @@
 use crate::domain::{
-    entities::Outfit, 
-    repositories::DynOutfitRepository
+    entities::Outfit,
+    repositories::OutfitRepository
 };
+use std::sync::Arc;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct OutfitWriteService {
-    repository: DynOutfitRepository,
+pub trait OutfitWriteServiceInterface: shaku::Interface {
+    fn create_outfit(&self, outfit: Outfit) -> Result<Outfit, String>;
+    fn update_outfit(&self, id: &str, outfit: Outfit) -> Result<Outfit, String>;
+    fn delete_outfit(&self, id: &str) -> Result<(), String>;
 }
 
-impl OutfitWriteService {
-    pub fn new(repository: DynOutfitRepository) -> Self {
-        Self { repository }
-    }
+#[derive(Clone, shaku::Component)]
+#[shaku(interface = OutfitWriteServiceInterface)]
+pub struct OutfitWriteService {
+    #[shaku(inject)]
+    repository: Arc<dyn OutfitRepository>,
+}
 
-    pub fn create_outfit(&self, mut outfit: Outfit) -> Result<Outfit, String> {
-        // Auto-generate ID
+impl OutfitWriteServiceInterface for OutfitWriteService {
+    fn create_outfit(&self, mut outfit: Outfit) -> Result<Outfit, String> {
         outfit.id = Uuid::new_v4().to_string();
         outfit.update_completion();
         outfit.update_price();
         self.repository.create(outfit)
     }
 
-    pub fn update_outfit(&self, id: &str, mut outfit: Outfit) -> Result<Outfit, String> {
+    fn update_outfit(&self, id: &str, mut outfit: Outfit) -> Result<Outfit, String> {
         outfit.update_completion();
         outfit.update_price();
         self.repository.update(id, outfit)
     }
 
-    pub fn delete_outfit(&self, id: &str) -> Result<(), String> {
+    fn delete_outfit(&self, id: &str) -> Result<(), String> {
         self.repository.delete(id)
     }
 }
