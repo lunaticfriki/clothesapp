@@ -90,17 +90,17 @@ pub fn seed_data(
     ];
 
     for (shirt_idx, pants_idx) in outfit_data {
-        let shirt_id = shirt_idx.and_then(|idx| {
+        let shirt = shirt_idx.and_then(|idx| {
             if idx < shirt_ids.len() {
-                Some(shirt_ids[idx].clone())
+                shirt_repo.get_by_id(&shirt_ids[idx]).ok().flatten()
             } else {
                 None
             }
         });
         
-        let pants_id = pants_idx.and_then(|idx| {
+        let pants = pants_idx.and_then(|idx| {
             if idx < pants_ids.len() {
-                Some(pants_ids[idx].clone())
+                pants_repo.get_by_id(&pants_ids[idx]).ok().flatten()
             } else {
                 None
             }
@@ -108,8 +108,8 @@ pub fn seed_data(
 
         let outfit = Outfit::new(
             Uuid::new_v4().to_string(),
-            shirt_id,
-            pants_id,
+            shirt,
+            pants,
         );
         outfit_repo.create(outfit)?;
     }

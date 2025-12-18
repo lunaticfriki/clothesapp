@@ -1,4 +1,5 @@
 use crate::domain::{entities::Pants, repositories::DynPantsRepository};
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct PantsWriteService {
@@ -10,7 +11,8 @@ impl PantsWriteService {
         Self { repository }
     }
 
-    pub fn create_pants(&self, pants: Pants) -> Result<Pants, String> {
+    pub fn create_pants(&self, mut pants: Pants) -> Result<Pants, String> {
+        pants.id = Uuid::new_v4().to_string();
         self.repository.create(pants)
     }
 

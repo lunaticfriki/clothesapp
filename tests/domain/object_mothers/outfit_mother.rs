@@ -1,4 +1,5 @@
 use clothes::domain::entities::Outfit;
+use super::{PantsMother, ShirtMother};
 
 pub struct OutfitMother;
 
@@ -6,8 +7,8 @@ impl OutfitMother {
     pub fn complete() -> Outfit {
         Outfit::new(
             "outfit-1".to_string(),
-            Some("shirt-1".to_string()),
-            Some("pants-1".to_string()),
+            Some(ShirtMother::default()),
+            Some(PantsMother::default()),
         )
     }
 
@@ -15,14 +16,14 @@ impl OutfitMother {
         Outfit::new(
             "outfit-2".to_string(),
             None,
-            Some("pants-1".to_string()),
+            Some(PantsMother::default()),
         )
     }
 
     pub fn incomplete_no_pants() -> Outfit {
         Outfit::new(
             "outfit-3".to_string(),
-            Some("shirt-1".to_string()),
+            Some(ShirtMother::default()),
             None,
         )
     }
@@ -31,7 +32,15 @@ impl OutfitMother {
         Outfit::empty()
     }
 
-    pub fn custom(id: &str, shirt_id: Option<String>, pants_id: Option<String>) -> Outfit {
-        Outfit::new(id.to_string(), shirt_id, pants_id)
+    pub fn custom(id: &str, shirt: Option<clothes::domain::entities::Shirt>, pants: Option<clothes::domain::entities::Pants>) -> Outfit {
+        Outfit::new(id.to_string(), shirt, pants)
+    }
+    
+    pub fn with_discounts() -> Outfit {
+        Outfit::new(
+            "outfit-discounted".to_string(),
+            Some(ShirtMother::with_discount()),
+            Some(PantsMother::with_discount()),
+        )
     }
 }

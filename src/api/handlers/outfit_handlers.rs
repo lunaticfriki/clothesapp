@@ -6,7 +6,11 @@ use axum::{
 };
 use serde_json::json;
 
-use crate::{application::{OutfitReadService, OutfitWriteService}, domain::entities::Outfit};
+use crate::{
+    api::dto::OutfitDTO,
+    application::{OutfitReadService, OutfitWriteService}, 
+    domain::entities::Outfit
+};
 
 #[derive(Clone)]
 pub struct OutfitHandlers {
@@ -22,8 +26,9 @@ impl OutfitHandlers {
 
 pub async fn create_outfit(
     State(handlers): State<OutfitHandlers>,
-    Json(outfit): Json<Outfit>,
+    Json(request): Json<OutfitDTO>,
 ) -> impl IntoResponse {
+    let outfit = request.to_outfit();
     match handlers.write_service.create_outfit(outfit) {
         Ok(created) => (StatusCode::CREATED, Json(created)).into_response(),
         Err(e) => (
